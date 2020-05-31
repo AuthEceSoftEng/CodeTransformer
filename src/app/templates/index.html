@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>CODEtransformer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</head>
+
+<body>
+    <div class="container">
+        <span class="blue-text text-darken-3">
+            <h1 class="center-align"><b>CODEtransformer</b></h1>
+        </span>
+        <span class="blue-text text-darken-3">
+            <h5 class="center-align">It's dangerous to code alone! Take this.</h5>
+        </span>
+        <div id="search" class="row">
+            <form id="search-input" class="col s12">
+                <div class="row">
+                    <div class="input-field col s8 push-s2">
+                        <textarea placeholder="Search" id="textarea" class="materialize-textarea"></textarea>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div id="search-button">
+            <a class="waves-effect waves-light btn-large disabled blue darken-3 modal-trigger" href="#results"><i
+                    class="material-icons left">search</i><b>Search</b></a>
+        </div>
+        <div id="results" class="modal">
+            <div class="modal-content">
+                <ul class="pagination">
+                    <li id="previous" class="waves-effect"><a><i class="material-icons">chevron_left</i></a></li>
+                    <li id="one" class="waves-effect waves-light active"><a target="1">1</a></li>
+                    <li id="two" class="waves-effect waves-light"><a target="2">2</a></li>
+                    <li id="three" class="waves-effect waves-light"><a target="3">3</a></li>
+                    <li id="four" class="waves-effect waves-light"><a target="4">4</a></li>
+                    <li id="five" class="waves-effect waves-light"><a target="5">5</a></li>
+                    <li id="six" class="waves-effect waves-light"><a target="6">6</a></li>
+                    <li id="seven" class="waves-effect waves-light"><a target="7">7</a></li>
+                    <li id="eight" class="waves-effect waves-light"><a target="8">8</a></li>
+                    <li id="nine" class="waves-effect waves-light"><a target="9">9</a></li>
+                    <li id="ten" class="waves-effect waves-light"><a target="10">10</a></li>
+                    <li id="next" class="waves-effect"><a><i class="material-icons">chevron_right</i></a></li>
+                </ul>
+                <p id="code1" class="code"></p>
+                <p id="code2" class="code"></p>
+                <p id="code3" class="code"></p>
+                <p id="code4" class="code"></p>
+                <p id="code5" class="code"></p>
+                <p id="code6" class="code"></p>
+                <p id="code7" class="code"></p>
+                <p id="code8" class="code"></p>
+                <p id="code9" class="code"></p>
+                <p id="code10" class="code"></p>
+        </div>
+    </div>
+</body>
+
+</html>

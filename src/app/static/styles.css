@@ -1,0 +1,42 @@
+html, body {
+    height: 500px;
+}
+
+h5 {
+    position: relative;
+    top: -15px;
+}
+
+#search {
+    position: relative;
+    top: 200px;
+}
+
+#textarea:focus {
+    border-bottom: 1px solid #1565c0;
+    box-shadow: 0 1px 0 0 #1565c0;
+}
+
+#search-button {
+    position: relative;
+    width: 155.7px;
+    top: 150px;
+    margin: 0 auto;
+}
+
+.pagination {
+    width: 452.1px;
+    margin: 0 auto;
+}
+
+.pagination li:hover {
+    background-color: #e0e0e0;
+}
+
+.pagination li.active {
+    background-color: #1565c0 !important;
+}
+
+.code {
+    overflow: auto;
+}

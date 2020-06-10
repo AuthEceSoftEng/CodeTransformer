@@ -1,21 +1,64 @@
 import re
 import wget
+import gzip
+import shutil
 import pickle
 import collections
 import pandas as pd
 import numpy as np
 import tensorflow_datasets as tfds
 
-corpus = pickle.load(open('/data/dataset/java_dedupe_definitions_v2.pkl', 'rb'))
+path = 'data/dataset/java/final/jsonl/MODE/java_MODE_INDEX.jsonl'
+mode = ['train', 'valid', 'test']
+
+for m in mode:
+  if m == 'train':
+    train_data = pd.DataFrame()
+
+    for i in range(0, 16):
+      file_path = path.replace('MODE', m)
+      file_path = file_path.replace('INDEX', str(i))
+
+      with gzip.open(file_path + '.gz', 'rb') as f_in:
+        with open(file_path, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+      train_data_temp = pd.read_json(file_path, lines=True)
+      train_data = train_data.append(train_data_temp)
+
+    # resetting indices.
+    train_data = train_data.reset_index(drop=True)
+
+  elif m == 'valid':
+    valid_data = pd.DataFrame()
+
+    for i in range(0, 1):
+      file_path = path.replace('MODE', m)
+      file_path = file_path.replace('INDEX', str(i))
+
+      with gzip.open(file_path + '.gz', 'rb') as f_in:
+        with open(file_path, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+      valid_data_temp = pd.read_json(file_path, lines=True)
+      valid_data = valid_data.append(valid_data_temp)
+
+  elif m == 'test':
+    test_data = pd.DataFrame()
+
+    for i in range(0, 1):
+      file_path = path.replace('MODE', m)
+      file_path = file_path.replace('INDEX', str(i))
+
+      with gzip.open(file_path + '.gz', 'rb') as f_in:
+        with open(file_path, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+      test_data_temp = pd.read_json(file_path, lines=True)
+      test_data = test_data.append(test_data_temp)
+
+corpus = pickle.load(open('data/dataset/java_dedupe_definitions_v2.pkl', 'rb'))
 corpus = pd.DataFrame(corpus)
-
-# removing rows with no docstrings.
-data = corpus[corpus['docstring_tokens'].map(lambda d: len(d)) > 0]
-# resetting DataFrame indices.
-data = data.reset_index(drop=True)
-
-# selecting only the first 50,000 rows for faster testing.
-#data = data[:50000]
 
 def remove_after_dot(data):
   for index, row in data.iteritems():
@@ -74,16 +117,16 @@ def remove_empty(data):
 
   return data
 
-def fill_empty(identifier, data):
-  for (index, row), identifier_row in zip(data.iteritems(), identifier):
+def fill_empty(function_name, data):
+  for (index, row), function_name_row in zip(data.iteritems(), function_name):
     if len(row) < 6 or len(row) > 30:
         data[index] = []
     if not data[index]:
-      # splitting identifiers on the dots.
-      augmented_row = identifier_row.split('.')
-      # capitalizing the first letter of the second half of the identifier.
+      # splitting function's name on the dots.
+      augmented_row = function_name_row.split('.')
+      # capitalizing the first letter of the second half of the function's name.
       augmented_row[1] = augmented_row[1][0].capitalize() + augmented_row[1][1:]
-      # seperating all identifier words of the second half using their first capital letter.
+      # seperating all function's name words of the second half using their first capital letter.
       data[index] = re.findall(r'[A-Z][a-z][^A-Z]*|[A-Z]*(?![a-z])|[A-Z][a-z][^A-Z]*', augmented_row[1])
 
   return data
@@ -153,53 +196,115 @@ def trim(data):
 
   return data
 
-# copying docstring_tokens column.
-docstring_tokens = data['docstring_tokens'].copy(deep=True)
-# copying identifier column.
-identifier = data['identifier'].copy(deep=True)
+# copying docstring_tokens column of the training dataset.
+train_docstring_tokens = train_data['docstring_tokens'].copy(deep=True)
+# copying func_name column of the training dataset.
+train_function_name = train_data['func_name'].copy(deep=True)
 
-# applying the preprocessing functions on all docstring tokens.
-docstring_tokens = remove_after_dot(docstring_tokens)
-docstring_tokens = remove_non_ascii(docstring_tokens)
-docstring_tokens = remove_special(docstring_tokens)
-docstring_tokens = seperate_strings(docstring_tokens)
-docstring_tokens = remove_empty(docstring_tokens)
-docstring_tokens = fill_empty(identifier, docstring_tokens)
-docstring_tokens = remove_empty(docstring_tokens)
-docstring_tokens = lowercase(docstring_tokens)
+# applying the preprocessing functions on all docstring tokens of the training dataset.
+train_docstring_tokens = remove_after_dot(train_docstring_tokens)
+train_docstring_tokens = remove_non_ascii(train_docstring_tokens)
+train_docstring_tokens = remove_special(train_docstring_tokens)
+train_docstring_tokens = seperate_strings(train_docstring_tokens)
+train_docstring_tokens = remove_empty(train_docstring_tokens)
+train_docstring_tokens = fill_empty(train_function_name, train_docstring_tokens)
+train_docstring_tokens = remove_empty(train_docstring_tokens)
+train_docstring_tokens = lowercase(train_docstring_tokens)
 
-# copying function_tokens column.
-function_tokens = data['function_tokens'].copy(deep=True)
+# copying docstring_tokens column of the validation dataset.
+valid_docstring_tokens = valid_data['docstring_tokens'].copy(deep=True)
+# copying func_name column of the validation dataset.
+valid_function_name = valid_data['func_name'].copy(deep=True)
 
-# applying the preprocessing functions on all function tokens.
-function_tokens = remove_non_ascii(function_tokens)
-function_tokens = seperate_strings(function_tokens)
-function_tokens = remove_unnecessary(function_tokens)
-function_tokens = replace_symbols(function_tokens)
-function_tokens = remove_special(function_tokens)
-function_tokens = remove_empty(function_tokens)
-function_tokens = trim(function_tokens)
-function_tokens = lowercase(function_tokens)
+# applying the preprocessing functions on all docstring tokens of the validation dataset.
+valid_docstring_tokens = remove_after_dot(valid_docstring_tokens)
+valid_docstring_tokens = remove_non_ascii(valid_docstring_tokens)
+valid_docstring_tokens = remove_special(valid_docstring_tokens)
+valid_docstring_tokens = seperate_strings(valid_docstring_tokens)
+valid_docstring_tokens = remove_empty(valid_docstring_tokens)
+valid_docstring_tokens = fill_empty(valid_function_name, valid_docstring_tokens)
+valid_docstring_tokens = remove_empty(valid_docstring_tokens)
+valid_docstring_tokens = lowercase(valid_docstring_tokens)
 
-dataset = pd.concat([docstring_tokens, function_tokens], axis=1)
-dataset.to_pickle('/data/dataset.pkl')
+# copying docstring_tokens column of the test dataset.
+test_docstring_tokens = test_data['docstring_tokens'].copy(deep=True)
+# copying func_name column of the test dataset.
+test_function_name = test_data['func_name'].copy(deep=True)
+
+# applying the preprocessing functions on all docstring tokens of the test dataset.
+test_docstring_tokens = remove_after_dot(test_docstring_tokens)
+test_docstring_tokens = remove_non_ascii(test_docstring_tokens)
+test_docstring_tokens = remove_special(test_docstring_tokens)
+test_docstring_tokens = seperate_strings(test_docstring_tokens)
+test_docstring_tokens = remove_empty(test_docstring_tokens)
+test_docstring_tokens = fill_empty(test_function_name, test_docstring_tokens)
+test_docstring_tokens = remove_empty(test_docstring_tokens)
+test_docstring_tokens = lowercase(test_docstring_tokens)
+
+# copying code_tokens column of the training dataset.
+train_code_tokens = train_data['code_tokens'].copy(deep=True)
+
+# applying the preprocessing functions on all code tokens of the training dataset.
+train_code_tokens = remove_non_ascii(train_code_tokens)
+train_code_tokens = seperate_strings(train_code_tokens)
+train_code_tokens = remove_unnecessary(train_code_tokens)
+train_code_tokens = replace_symbols(train_code_tokens)
+train_code_tokens = remove_special(train_code_tokens)
+train_code_tokens = remove_empty(train_code_tokens)
+train_code_tokens = trim(train_code_tokens)
+train_code_tokens = lowercase(train_code_tokens)
+
+# copying code_tokens column of the validation dataset.
+valid_code_tokens = valid_data['code_tokens'].copy(deep=True)
+
+# applying the preprocessing functions on all code tokens of the validation dataset.
+valid_code_tokens = remove_non_ascii(valid_code_tokens)
+valid_code_tokens = seperate_strings(valid_code_tokens)
+valid_code_tokens = remove_unnecessary(valid_code_tokens)
+valid_code_tokens = replace_symbols(valid_code_tokens)
+valid_code_tokens = remove_special(valid_code_tokens)
+valid_code_tokens = remove_empty(valid_code_tokens)
+valid_code_tokens = trim(valid_code_tokens)
+valid_code_tokens = lowercase(valid_code_tokens)
+
+# copying code_tokens column of the test dataset.
+test_code_tokens = test_data['code_tokens'].copy(deep=True)
+
+# applying the preprocessing functions on all code tokens of the test dataset.
+test_code_tokens = remove_non_ascii(test_code_tokens)
+test_code_tokens = seperate_strings(test_code_tokens)
+test_code_tokens = remove_unnecessary(test_code_tokens)
+test_code_tokens = replace_symbols(test_code_tokens)
+test_code_tokens = remove_special(test_code_tokens)
+test_code_tokens = remove_empty(test_code_tokens)
+test_code_tokens = trim(test_code_tokens)
+test_code_tokens = lowercase(test_code_tokens)
+
+train_dataset = pd.concat([train_docstring_tokens, train_code_tokens], axis=1)
+train_dataset.to_pickle('data/train_dataset.pkl')
+
+valid_dataset = pd.concat([valid_docstring_tokens, valid_code_tokens], axis=1)
+valid_dataset.to_pickle('data/valid_dataset.pkl')
+
+test_dataset = pd.concat([test_docstring_tokens, test_code_tokens], axis=1)
+test_dataset.to_pickle('data/test_dataset.pkl')
 
 # vocabulary of the 10,000 most common docstring tokens.
-docstring_vocab = list(token for row in docstring_tokens for token in row)
+docstring_vocab = list(token for row in train_docstring_tokens for token in row)
 docstring_vocab = collections.Counter(docstring_vocab)
 docstring_vocab = dict(docstring_vocab.most_common(10000))
 docstring_vocab = list(docstring_vocab.keys())
-# vocabulary of the 10,000 most common function tokens.
-function_vocab = list(token for row in function_tokens for token in row)
-function_vocab = collections.Counter(function_vocab)
-function_vocab = dict(function_vocab.most_common(10000))
-function_vocab = list(function_vocab.keys())
+# vocabulary of the 10,000 most common code tokens.
+code_vocab = list(token for row in train_code_tokens for token in row)
+code_vocab = collections.Counter(code_vocab)
+code_vocab = dict(code_vocab.most_common(10000))
+code_vocab = list(code_vocab.keys())
 
-with open('/data/docstring_vocab.pkl', 'wb') as docstring_vocab_pkl:
+with open('data/docstring_vocab.pkl', 'wb') as docstring_vocab_pkl:
     pickle.dump(docstring_vocab, docstring_vocab_pkl, protocol=pickle.HIGHEST_PROTOCOL)
 
-with open('/data/function_vocab.pkl', 'wb') as function_vocab_pkl:
-    pickle.dump(function_vocab, function_vocab_pkl, protocol=pickle.HIGHEST_PROTOCOL)
+with open('data/code_vocab.pkl', 'wb') as code_vocab_pkl:
+    pickle.dump(code_vocab, code_vocab_pkl, protocol=pickle.HIGHEST_PROTOCOL)
 
 # copying docstring_tokens column.
 corpus_function_tokens = corpus['function_tokens'].copy(deep=True)
@@ -215,4 +320,4 @@ corpus_function_tokens = trim(corpus_function_tokens)
 corpus_function_tokens = lowercase(corpus_function_tokens)
 
 functions = pd.concat([corpus.function, corpus_function_tokens, corpus.url], axis=1)
-functions.to_pickle('/data/functions.pkl')
+functions.to_pickle('data/functions.pkl')

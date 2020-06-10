@@ -14,18 +14,17 @@ import pandas as pd
 import numpy as np
 from model import *
 
-# loading the dataset.
-dataset = pd.read_pickle('/data/dataset.pkl')
-
-# copying docstring_tokens column.
-docstring_tokens = dataset['docstring_tokens'].copy(deep=True)
-# copying function_tokens column.
-function_tokens = dataset['function_tokens'].copy(deep=True)
+# loading the training dataset.
+train_dataset = pd.read_pickle('data/train_dataset.pkl')
+# loading the validation dataset.
+valid_dataset = pd.read_pickle('data/valid_dataset.pkl')
+# loading the test dataset.
+test_dataset = pd.read_pickle('data/test_dataset.pkl')
 
 # loading the docstring vocabulary.
-docstring_vocab =  pickle.load(open('/data/docstring_vocab.pkl', 'rb'))
-# loading the function vocabulary.
-function_vocab =  pickle.load(open('/data/function_vocab.pkl', 'rb'))
+docstring_vocab =  pickle.load(open('data/docstring_vocab.pkl', 'rb'))
+# loading the code vocabulary.
+code_vocab =  pickle.load(open('data/code_vocab.pkl', 'rb'))
 
 def encode(inp, tar, input_encoder, target_encoder):
   # encoding input data.
@@ -56,28 +55,30 @@ def to_numpy(inp, tar):
 # building input_encoder.
 input_encoder = tfds.features.text.TokenTextEncoder(docstring_vocab)
 # building target_encoder.
-target_encoder = tfds.features.text.TokenTextEncoder(function_vocab)
+target_encoder = tfds.features.text.TokenTextEncoder(code_vocab)
 
-# initializing original_input list of lists.
-original_input = docstring_tokens.copy(deep=True)
-# initializing original_target list.
-original_target = function_tokens.copy(deep=True)
+# loading the input and target data of the training dataset.
+training_input = train_dataset['docstring_tokens'].copy(deep=True)
+training_target = train_dataset['code_tokens'].copy(deep=True)
+# loading the input and target data of the validation dataset.
+validation_input = valid_dataset['docstring_tokens'].copy(deep=True)
+validation_target = valid_dataset['code_tokens'].copy(deep=True)
+# loading the input and target data of the test dataset.
+test_input = test_dataset['docstring_tokens'].copy(deep=True)
+test_target = test_dataset['code_tokens'].copy(deep=True)
 
-# splitting to training set.
-training_input = original_input[:480000]
-training_target = original_target[:480000]
-# splitting to validation set.
-validation_input = original_input[480000:499000]
-validation_input = validation_input.reset_index(drop=True)
-validation_target = original_target[480000:499000]
-validation_target = validation_target.reset_index(drop=True)
-
-# applying encoding to input and target data.
+# applying encoding to the input and target data.
 encoded_training_input, encoded_training_target = encode(training_input, training_target, input_encoder, target_encoder)
 encoded_validation_input, encoded_validation_target = encode(validation_input, validation_target, input_encoder, target_encoder)
-# converting input and target data to numpy.
+encoded_test_input, encoded_test_target = encode(test_input, test_target, input_encoder, target_encoder)
+# converting the input and target data to numpy.
 encoded_training_input, encoded_training_target = to_numpy(encoded_training_input, encoded_training_target)
 encoded_validation_input, encoded_validation_target = to_numpy(encoded_validation_input, encoded_validation_target)
+encoded_test_input, encoded_test_target = to_numpy(encoded_test_input, encoded_test_target)
+
+# applying encoding to the whole corpus and converting it to numpy.
+_, encoded_corpus_target = encode([[]], corpus_function_tokens, input_encoder, target_encoder)
+_, encoded_corpus_target = to_numpy([[]], encoded_corpus_target)
 
 BUFFER_SIZE = 500000
 
@@ -97,6 +98,21 @@ valid_dataset = valid_dataset.shuffle(BUFFER_SIZE, reshuffle_each_iteration=True
 valid_dataset = valid_dataset.batch(1000)
 valid_dataset = valid_dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
+# creating a tensor dataset with the test data.
+test_dataset = tf.data.Dataset.from_tensor_slices((encoded_test_input, encoded_test_target))
+# caching the dataset for performance optimizations.
+test_dataset = test_dataset.cache()
+test_dataset = test_dataset.shuffle(BUFFER_SIZE, reshuffle_each_iteration=True)
+test_dataset = test_dataset.batch(1000)
+test_dataset = test_dataset.prefetch(tf.data.experimental.AUTOTUNE)
+
+# creating a tensor dataset with the whole corpus.
+corpus_dataset = tf.data.Dataset.from_tensor_slices(encoded_corpus_target)
+# caching the dataset for performance optimizations.
+corpus_dataset = corpus_dataset.cache()
+corpus_dataset = corpus_dataset.batch(1000)
+corpus_dataset = corpus_dataset.prefetch(tf.data.experimental.AUTOTUNE)
+
 NUM_LAYERS = 3
 INPUT_VOCAB_SIZE = input_encoder.vocab_size
 TARGET_VOCAB_SIZE = target_encoder.vocab_size
@@ -110,10 +126,6 @@ RATE = 0.1
 matching_network = MatchingNetwork(NUM_LAYERS, INPUT_VOCAB_SIZE, TARGET_VOCAB_SIZE,
                                    INPUT_POSITION, TARGET_POSITION, NUM_HEADS,
                                    DFF, D_MODEL, RATE)
-
-if os.path.isfile('/models/weights.index'):
-  matching_network.load_weights('/models/weights')
-  print('Model restored.')
 
 # finding the best learning rate using Exponential Decay.
 #learning_rate = tf.keras.optimizers.schedules.ExponentialDecay(1e-10, decay_steps=100, decay_rate=1.1, staircase=True)
@@ -209,13 +221,34 @@ def valid_step(inp, tar):
 
   return valid_mrr
 
+@tf.function
+def test_step(inp, tar):
+  # creating the input padding mask.
+  padding_mask_inp = 1 - tf.cast(tf.equal(inp, 0), dtype=tf.float32)
+  padding_mask_inp = padding_mask_inp[:, tf.newaxis, tf.newaxis, :]
+  # creating the target padding mask.
+  padding_mask_tar = 1 - tf.cast(tf.equal(tar, 0), dtype=tf.float32)
+  padding_mask_tar = padding_mask_tar[:, tf.newaxis, tf.newaxis, :]
+
+  # creating the ground truth for the accuracy metric.
+  diagonal = tf.ones(tf.shape(inp)[-2])
+  one_hot_y = tf.linalg.tensor_diag(diagonal)
+
+  with tf.GradientTape() as tape:
+    predictions, en1, en2 = matching_network(inp, tar, padding_mask_inp, padding_mask_tar, training=False)
+
+  # calculating the metrics.
+  test_mrr = MRR(predictions)
+
+  return test_mrr
+
 summary_writer = tf.summary.create_file_writer('logs/gradient_tape/')
 
 stopwatch = []
 step = 0
 best_valid_mrr = 0
 
-for epoch in range(50):
+for epoch in range(40):
   # initializing the timer.
   start = time.time()
 
@@ -291,8 +324,19 @@ for epoch in range(50):
   if tf.reduce_mean(epoch_valid_mrr) > best_valid_mrr:
     best_valid_mrr = tf.reduce_mean(epoch_valid_mrr)
 
-    matching_network.save_weights('/models/weights', overwrite=True)
+    matching_network.save_weights('models/weights', overwrite=True)
     print('Model saved at epoch {}\n'.format(epoch+1))
 
 # outputting the total training time.
 print('Total training time: {} seconds\n'.format(tf.reduce_sum(stopwatch)))
+
+if os.path.isfile('models/weights.index'):
+  matching_network.load_weights('models/weights')
+  print('Model restored.')
+
+test_mrr = []
+
+for inp, tar in test_dataset:
+  test_mrr.append(tf.reduce_mean(test_step(inp, tar)))
+
+print('Test MRR: {:.10f}'.format(tf.reduce_mean(test_mrr)))

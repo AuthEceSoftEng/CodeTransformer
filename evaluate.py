@@ -14,14 +14,14 @@ from annoy import AnnoyIndex
 from model import *
 
 # loading the docstring vocabulary.
-docstring_vocab =  pickle.load(open('/data/docstring_vocab.pkl', 'rb'))
-# loading the function vocabulary.
-function_vocab =  pickle.load(open('/data/function_vocab.pkl', 'rb'))
+docstring_vocab =  pickle.load(open('data/docstring_vocab.pkl', 'rb'))
+# loading the code vocabulary.
+code_vocab =  pickle.load(open('data/code_vocab.pkl', 'rb'))
 
 # loading the functions, function tokens and URLs of the whole corpus.
-functions = pd.read_pickle('/data/functions.pkl')
+functions = pd.read_pickle('data/functions.pkl')
 
-# copying corpus' function_tokens column.
+# copying corpus' code_tokens column.
 corpus_function_tokens = functions['function_tokens'].copy(deep=True)
 
 def encode(inp, tar, input_encoder, target_encoder):
@@ -65,7 +65,7 @@ BUFFER_SIZE = 500000
 corpus_dataset = tf.data.Dataset.from_tensor_slices(encoded_corpus_target)
 # caching the dataset for performance optimizations.
 corpus_dataset = corpus_dataset.cache()
-corpus_dataset = corpus_dataset.batch(128)
+corpus_dataset = corpus_dataset.batch(1000)
 corpus_dataset = corpus_dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
 NUM_LAYERS = 3
@@ -82,8 +82,8 @@ matching_network = MatchingNetwork(NUM_LAYERS, INPUT_VOCAB_SIZE, TARGET_VOCAB_SI
                                    INPUT_POSITION, TARGET_POSITION, NUM_HEADS,
                                    DFF, D_MODEL, RATE)
 
-if os.path.isfile('/models/weights.index'):
-  matching_network.load_weights('/models/weights')
+if os.path.isfile('models/weights.index'):
+  matching_network.load_weights('models/weights')
   print('Model restored.')
 
 def remove_special(data):
@@ -105,7 +105,7 @@ def remove_empty(data):
 
   return data
 
-with open('/data/queries.txt', 'r') as f:
+with open('data/queries.txt', 'r') as f:
     queries_file = f.readlines()
 
 # removing newline characters.
@@ -154,7 +154,7 @@ for index, vector in enumerate(function_representations):
   indices.add_item(index, vector)
 
 indices.build(10)
-indices.save('/content/drive/My Drive/TS-SS/functions.ann')
+indices.save('models/functions.ann')
 
 def get_predictions(vector, indices):
   function_index, distance = indices.get_nns_by_vector(vector, n=100, include_distances=True)
@@ -170,4 +170,4 @@ for query_index, vector in enumerate(query_representations):
     predictions.append([queries_file[query_index][0], 'java', functions.url[index]])
 
 predictions_dataframe = pd.DataFrame(predictions, columns=['query', 'language', 'url'])
-predictions_dataframe.to_csv('/content/drive/My Drive/TS-SS/model_predictions.csv', index=False)
+predictions_dataframe.to_csv('data/model_predictions.csv', index=False)

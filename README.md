@@ -2,6 +2,8 @@
 
 CODEtransformer is a code search engine that uses Deep Learning to answer natural language queries.
 
+The Diploma Thesis in Greek can be accessed [here](https://ikee.lib.auth.gr/record/320405/files/Evangelos_Papathomas_8692_CODEtransformer.pdf).
+
 ## Preprocessing
 
 To preprocess the dataset, run the following command.

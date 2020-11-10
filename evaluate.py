@@ -53,7 +53,7 @@ def to_numpy(inp, tar):
 # building input_encoder.
 input_encoder = tfds.features.text.TokenTextEncoder(docstring_vocab)
 # building target_encoder.
-target_encoder = tfds.features.text.TokenTextEncoder(function_vocab)
+target_encoder = tfds.features.text.TokenTextEncoder(code_vocab)
 
 # applying encoding to the whole corpus and converting it to numpy.
 _, encoded_corpus_target = encode([[]], corpus_function_tokens, input_encoder, target_encoder)

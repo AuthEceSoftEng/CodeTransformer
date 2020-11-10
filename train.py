@@ -76,10 +76,6 @@ encoded_training_input, encoded_training_target = to_numpy(encoded_training_inpu
 encoded_validation_input, encoded_validation_target = to_numpy(encoded_validation_input, encoded_validation_target)
 encoded_test_input, encoded_test_target = to_numpy(encoded_test_input, encoded_test_target)
 
-# applying encoding to the whole corpus and converting it to numpy.
-_, encoded_corpus_target = encode([[]], corpus_function_tokens, input_encoder, target_encoder)
-_, encoded_corpus_target = to_numpy([[]], encoded_corpus_target)
-
 BUFFER_SIZE = 500000
 
 # creating a tensor dataset with the training data.
@@ -105,13 +101,6 @@ test_dataset = test_dataset.cache()
 test_dataset = test_dataset.shuffle(BUFFER_SIZE, reshuffle_each_iteration=True)
 test_dataset = test_dataset.batch(1000)
 test_dataset = test_dataset.prefetch(tf.data.experimental.AUTOTUNE)
-
-# creating a tensor dataset with the whole corpus.
-corpus_dataset = tf.data.Dataset.from_tensor_slices(encoded_corpus_target)
-# caching the dataset for performance optimizations.
-corpus_dataset = corpus_dataset.cache()
-corpus_dataset = corpus_dataset.batch(1000)
-corpus_dataset = corpus_dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
 NUM_LAYERS = 3
 INPUT_VOCAB_SIZE = input_encoder.vocab_size

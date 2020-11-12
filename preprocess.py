@@ -301,10 +301,10 @@ code_vocab = dict(code_vocab.most_common(10000))
 code_vocab = list(code_vocab.keys())
 
 with open('data/docstring_vocab.pkl', 'wb') as docstring_vocab_pkl:
-    pickle.dump(docstring_vocab, docstring_vocab_pkl, protocol=pickle.HIGHEST_PROTOCOL)
+  pickle.dump(docstring_vocab, docstring_vocab_pkl, protocol=pickle.HIGHEST_PROTOCOL)
 
 with open('data/code_vocab.pkl', 'wb') as code_vocab_pkl:
-    pickle.dump(code_vocab, code_vocab_pkl, protocol=pickle.HIGHEST_PROTOCOL)
+  pickle.dump(code_vocab, code_vocab_pkl, protocol=pickle.HIGHEST_PROTOCOL)
 
 # copying docstring_tokens column.
 corpus_function_tokens = corpus['function_tokens'].copy(deep=True)

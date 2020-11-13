@@ -2,7 +2,8 @@
 
 CodeTransformer is a code search engine that uses Deep Learning to answer natural language queries.
 
-The Diploma Thesis in Greek can be accessed [here](https://ikee.lib.auth.gr/record/320405/files/Evangelos_Papathomas_8692_CODEtransformer.pdf).
+This repo contains the code of the CodeTransformer as well as the results required to reproduce the findings of the paper:  
+```Evangelos Papathomas, Themistoklis Diamantopoulos, Andreas Symeonidis, Requirements Modeling and Reuse using Ontology-driven Recommendations```
 
 ## Preprocessing
 

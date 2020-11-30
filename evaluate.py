@@ -18,11 +18,11 @@ docstring_vocab =  pickle.load(open('data/docstring_vocab.pkl', 'rb'))
 # loading the code vocabulary.
 code_vocab =  pickle.load(open('data/code_vocab.pkl', 'rb'))
 
-# loading the functions, function tokens and URLs of the whole corpus.
-functions = pd.read_pickle('data/functions.pkl')
+# loading the function tokens and the URLs of the whole corpus.
+function_tokens_urls = pd.read_pickle('data/function_tokens_urls.pkl')
 
-# copying corpus' code_tokens column.
-corpus_function_tokens = functions['function_tokens'].copy(deep=True)
+# copying corpus' function_tokens column.
+corpus_function_tokens = function_tokens_urls['function_tokens'].copy(deep=True)
 
 def encode(inp, tar, input_encoder, target_encoder):
   # encoding input data.
@@ -167,7 +167,7 @@ for query_index, vector in enumerate(query_representations):
   function_index, distance = get_predictions(vector, indices)
   
   for index in function_index:
-    predictions.append([queries_file[query_index][0], 'java', functions.url[index]])
+    predictions.append([queries_file[query_index][0], 'java', function_tokens_urls.url[index]])
 
 predictions_dataframe = pd.DataFrame(predictions, columns=['query', 'language', 'url'])
 predictions_dataframe.to_csv('data/model_predictions.csv', index=False)

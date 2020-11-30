@@ -201,7 +201,7 @@ train_docstring_tokens = train_data['docstring_tokens'].copy(deep=True)
 # copying func_name column of the training dataset.
 train_function_name = train_data['func_name'].copy(deep=True)
 
-# applying the preprocessing functions on all docstring tokens of the training dataset.
+# applying the preprocessing functions to all docstring tokens of the training dataset.
 train_docstring_tokens = remove_after_dot(train_docstring_tokens)
 train_docstring_tokens = remove_non_ascii(train_docstring_tokens)
 train_docstring_tokens = remove_special(train_docstring_tokens)
@@ -216,7 +216,7 @@ valid_docstring_tokens = valid_data['docstring_tokens'].copy(deep=True)
 # copying func_name column of the validation dataset.
 valid_function_name = valid_data['func_name'].copy(deep=True)
 
-# applying the preprocessing functions on all docstring tokens of the validation dataset.
+# applying the preprocessing functions to all docstring tokens of the validation dataset.
 valid_docstring_tokens = remove_after_dot(valid_docstring_tokens)
 valid_docstring_tokens = remove_non_ascii(valid_docstring_tokens)
 valid_docstring_tokens = remove_special(valid_docstring_tokens)
@@ -231,7 +231,7 @@ test_docstring_tokens = test_data['docstring_tokens'].copy(deep=True)
 # copying func_name column of the test dataset.
 test_function_name = test_data['func_name'].copy(deep=True)
 
-# applying the preprocessing functions on all docstring tokens of the test dataset.
+# applying the preprocessing functions to all docstring tokens of the test dataset.
 test_docstring_tokens = remove_after_dot(test_docstring_tokens)
 test_docstring_tokens = remove_non_ascii(test_docstring_tokens)
 test_docstring_tokens = remove_special(test_docstring_tokens)
@@ -244,7 +244,7 @@ test_docstring_tokens = lowercase(test_docstring_tokens)
 # copying code_tokens column of the training dataset.
 train_code_tokens = train_data['code_tokens'].copy(deep=True)
 
-# applying the preprocessing functions on all code tokens of the training dataset.
+# applying the preprocessing functions to all code tokens of the training dataset.
 train_code_tokens = remove_non_ascii(train_code_tokens)
 train_code_tokens = seperate_strings(train_code_tokens)
 train_code_tokens = remove_unnecessary(train_code_tokens)
@@ -257,7 +257,7 @@ train_code_tokens = lowercase(train_code_tokens)
 # copying code_tokens column of the validation dataset.
 valid_code_tokens = valid_data['code_tokens'].copy(deep=True)
 
-# applying the preprocessing functions on all code tokens of the validation dataset.
+# applying the preprocessing functions to all code tokens of the validation dataset.
 valid_code_tokens = remove_non_ascii(valid_code_tokens)
 valid_code_tokens = seperate_strings(valid_code_tokens)
 valid_code_tokens = remove_unnecessary(valid_code_tokens)
@@ -270,7 +270,7 @@ valid_code_tokens = lowercase(valid_code_tokens)
 # copying code_tokens column of the test dataset.
 test_code_tokens = test_data['code_tokens'].copy(deep=True)
 
-# applying the preprocessing functions on all code tokens of the test dataset.
+# applying the preprocessing functions to all code tokens of the test dataset.
 test_code_tokens = remove_non_ascii(test_code_tokens)
 test_code_tokens = seperate_strings(test_code_tokens)
 test_code_tokens = remove_unnecessary(test_code_tokens)
@@ -309,7 +309,7 @@ with open('data/code_vocab.pkl', 'wb') as code_vocab_pkl:
 # copying docstring_tokens column.
 corpus_function_tokens = corpus['function_tokens'].copy(deep=True)
 
-# applying the preprocessing functions on all function tokens.
+# applying the preprocessing functions to all function tokens.
 corpus_function_tokens = remove_non_ascii(corpus_function_tokens)
 corpus_function_tokens = seperate_strings(corpus_function_tokens)
 corpus_function_tokens = remove_unnecessary(corpus_function_tokens)
@@ -319,5 +319,8 @@ corpus_function_tokens = remove_empty(corpus_function_tokens)
 corpus_function_tokens = trim(corpus_function_tokens)
 corpus_function_tokens = lowercase(corpus_function_tokens)
 
-functions = pd.concat([corpus.function, corpus_function_tokens, corpus.url], axis=1)
-functions.to_pickle('data/functions.pkl')
+function_tokens_urls = pd.concat([corpus_function_tokens, corpus.url], axis=1)
+function_tokens_urls.to_pickle('data/function_tokens_urls.pkl')
+
+functions_urls = pd.concat([corpus.function, corpus.url], axis=1)
+functions_urls.to_pickle('data/functions_urls.pkl')

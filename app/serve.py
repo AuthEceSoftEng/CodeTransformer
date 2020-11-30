@@ -17,8 +17,8 @@ def api():
     # loading the docstring vocabulary.
     docstring_vocab =  pickle.load(open('data/docstring_vocab.pkl', 'rb'))
 
-    # loading the functions, function tokens and URLs of the whole corpus.
-    functions = pd.read_pickle('data/functions.pkl')
+    # loading the functions and URLs of the whole corpus.
+    functions_urls = pd.read_pickle('data/functions_urls.pkl')
 
     # building input_encoder.
     input_encoder = tfds.features.text.TokenTextEncoder(docstring_vocab)
@@ -136,8 +136,8 @@ def api():
         function_index, distance = get_predictions(query_representations[0], indices)
             
         for index in function_index:
-            predictions.append(functions.url[index])
-            predictions.append(functions.function[index].replace('\n', '<br>').replace(' ', '&nbsp;').replace('\t', '&emsp;'))
+            predictions.append(functions_urls.url[index])
+            predictions.append(functions_urls.function[index].replace('\n', '<br>').replace(' ', '&nbsp;').replace('\t', '&emsp;'))
 
         return predictions
 
